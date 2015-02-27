@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{ game.name }}{% endblock %}
+
+{% block content %}
+<div data-game="poker" data-url="{{ game.get_url() }}" data-me="{{ user.user_id() }}" data-token="{{ token }}">
+	<div class="page-header">
+		<h1>{{ game.name }} <span data-game="sum-of-estimates" class="label label-default" data-toggle="tooltip" data-placement="right" title="Sum of story estimates"></span></h1>
+	</div>
+	<div class="row">
+		<div class="col-md-8">
+			<div data-game="stories" class="list-group"></div>
+			<div class="row hidden" data-game="actions">
+				<div class="col-md-8" data-game="story">
+					<form action="{{ game.get_url() }}/story" method="post" role="form">
+						<div class="input-group">
+							<input type="text" class="form-control" name="name" id="name" placeholder="Enter name or URL" required>
+							<span class="input-group-btn">
+								<button class="btn btn-primary" type="submit">
+									<span class="glyphicon glyphicon-plus"></span> New story
+								</button>
+							</span>
+						</div>
+					</form>
+				</div>
+				<div class="col-md-1">
+					<p class="form-control-static text-center text-uppercase">OR</p>
+				</div>
+				<div class="col-md-3">
+					<a data-game="complete" class="btn btn-primary btn-block" href="{{ game.get_url() }}/complete">
+						<span class="glyphicon glyphicon-ok"></span> Complete game
+					</a>
+					<hr class="hidden">
+					<a data-game="reopen" class="btn btn-primary btn-block hidden" href="{{ game.get_url() }}/reopen">
+						<span class="glyphicon glyphicon-repeat"></span> Reopen game
+					</a>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-4">
+			<div data-spy="affix" data-offset-top="120">
+				<p><input data-game="url" type="email" class="form-control" value="{{ request_url }}"></p>
+				<hr>
+				<h5>Who is participating in this game?</h5>
+				<ol class="list-unstyled" data-game="participants"></ol>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript" src="/_ah/channel/jsapi"></script>
+<script type="text/javascript" src="/assets/js/poker-1.0.1.js"></script>
+{% endblock %}
