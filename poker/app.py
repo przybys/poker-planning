@@ -19,4 +19,5 @@ application = webapp2.WSGIApplication([
     ('/game/(\d+)/story/(\d+)/round/(\d+)/complete', CompleteRound),
     ('/game/(\d+)/story/(\d+)/round/(\d+)/estimate', EstimateRound),
     ('/game/(\d+)/participant/(\d+)/(player|observer)', ToggleGameObserver),
+    ('/game/(\d+)/participant/(\d+)/delete', DeleteParticipant),
 ], debug = True)

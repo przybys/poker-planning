@@ -10,7 +10,7 @@
 		this.init(element);
 	};
 	
-	Poker.VERSION = '1.0.1';
+	Poker.VERSION = '1.0.2';
 	
 	Poker.prototype.init = function(element) {
 		this.$game = $(element);
@@ -490,6 +490,7 @@
 				var $menu = $('<ul class="dropdown-menu" role="menu"></ul>');
 				
 				this.toggleObserver(participant, $menu);
+				this.deleteParticipant(participant, $menu);
 				
 				var $dropdown = $('<div class="dropdown">')
 					.append($toggle)
@@ -510,6 +511,29 @@
 					.appendTo($participants);
 			}
 		}
+	};
+	
+	Poker.prototype.deleteParticipant = function(participant, $menu) {
+		if(this.game.user == participant.user) {
+			return;
+		}
+		
+		var action = '/delete';
+		var icon = 'glyphicon-trash';
+		var text = 'Delete participant';
+		
+		var $item = $('<li>')
+			.appendTo($menu);
+		
+		var $icon = $('<span class="glyphicon"></span>')
+			.addClass(icon);
+		
+		$('<a>')
+			.attr('href', participant.url + action)
+			.append($icon)
+			.append(' ')
+			.append(text)
+			.appendTo($item);
 	};
 	
 	Poker.prototype.toggleObserver = function(participant, $menu) {

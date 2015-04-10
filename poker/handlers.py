@@ -34,6 +34,7 @@ __all__ = [
     'CompleteRound',
     'EstimateRound',
     'ToggleGameObserver',
+    'DeleteParticipant',
 ]
 
 
@@ -310,4 +311,13 @@ class ToggleGameObserver(PokerRequestHandler):
         participant.observer = observer == 'observer'
         participant.put()
         game = participant.parent()
+        game.send_update()
+
+class DeleteParticipant(PokerRequestHandler):
+    def post(self, game_id, participant_key):
+        participant = self.get_participant(game_id, participant_key, check_user = True)
+        game = participant.parent()
+        if game.user == participant.user:
+            self.abort(403)
+        participant.delete()
         game.send_update()
