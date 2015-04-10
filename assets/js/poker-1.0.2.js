@@ -314,7 +314,7 @@
 		this.waitingFor(round, $round);
 		
 		if(this.me == this.game.user) {
-			$('<a class="btn btn-primary" data-toggle="tooltip" data-placement="right" title="Complete round"><span class="glyphicon glyphicon-ok"></span></a>')
+			$('<a class="btn btn-primary" data-toggle="tooltip" data-placement="right" data-container="body" title="Complete round"><span class="glyphicon glyphicon-ok"></span></a>')
 				.attr('href', round.url + '/complete')
 				.appendTo($cards);
 		}

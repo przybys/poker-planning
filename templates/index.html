@@ -8,7 +8,7 @@
 	<div class="page-header">
 		<h1>
 			My games
-			<button class="btn btn-primary pull-right" data-toggle="modal" data-target="#new-game">
+			<button type="button" class="btn btn-primary pull-right" data-toggle="modal" data-target="#new-game">
 				<span class="glyphicon glyphicon-plus"></span>
 				New game
 			</button>
@@ -54,10 +54,10 @@
 			{% endfor %}
 		</tbody>
 	</table>
-	<div data-games="new-game" class="modal fade" id="new-game" role="dialog">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<form action="/game" method="post" role="form">
+	<form action="/game" method="post" role="form">
+		<div data-games="new-game" class="modal fade" id="new-game" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
 					<div class="modal-header">
 						<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
 						<h4 class="modal-title" id="new-game-label">New game</h4>
@@ -85,10 +85,10 @@
 						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
 						<button type="submit" class="btn btn-primary" data-loading-text="Create">Create</button>
 					</div>
-				</form>
+				</div>
 			</div>
 		</div>
-	</div>
+	</form>
 </div>
 {% else %}
 <div class="jumbotron">
