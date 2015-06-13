@@ -9,8 +9,10 @@ import jinja2
 
 from google.appengine.api import users
 from google.appengine.api import channel
+from oauth2client import client
 
 from poker.models import *
+from poker.oauth2 import decorator, service
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader = jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), '../templates')),
@@ -23,6 +25,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 __all__ = [
     'MainPage',
     'NewGame',
+    'GameList',
     'DeleteGame',
     'GamePage',
     'GameOpened',
@@ -37,10 +40,9 @@ __all__ = [
     'DeleteParticipant',
 ]
 
-
-
 class Player():
     user = None
+    profile = None
     
     def __init__(self):
         user = users.get_current_user()
@@ -52,11 +54,32 @@ class Player():
     
     def get_url(self, dest_url):
         if self.user:
-            return users.create_logout_url(dest_url)
+            return users.create_logout_url('/')
         return users.create_login_url(dest_url)
     
     def get_games(self):
         return Game.all().filter("user =", self.user)
+    
+    def get_profile(self):
+        if not self.profile:
+            try:
+                http = decorator.http()
+                self.profile = service.people().get(userId='me').execute(http=http)
+            except client.AccessTokenRefreshError:
+                pass
+        return self.profile
+    
+    def get_name(self):
+        profile = self.get_profile()
+        if profile and 'displayName' in profile:
+            return profile['displayName']
+        return None
+    
+    def get_photo(self):
+        profile = self.get_profile()
+        if profile and 'image' in profile:
+            return profile['image']['url']
+        return None
 
 class PokerRequestHandler(webapp2.RequestHandler):
     player = None
@@ -108,14 +131,13 @@ class MainPage(PokerRequestHandler):
     def get(self):
         player = self.get_player()
         user = player.get_user()
+        if user:
+            return self.redirect('/game/list')
         url = player.get_url(self.request.uri)
-        games = player.get_games().order("-created")
         template = JINJA_ENVIRONMENT.get_template('index.html')
         self.response.write(template.render({
             'user': user,
             'url': url,
-            'games': games,
-            'decks': Game.DECK_CHOICES,
             'now': datetime.datetime.now(),
         }))
 
@@ -134,6 +156,25 @@ class NewGame(PokerRequestHandler):
         game_url = game.get_url()
         return self.redirect(game_url)
 
+class GameList(PokerRequestHandler):
+    
+    @decorator.oauth_required
+    def get(self):
+        player = self.get_player()
+        user = player.get_user()
+        url = player.get_url(self.request.uri)
+        games = player.get_games().order("-created")
+        template = JINJA_ENVIRONMENT.get_template('list.html')
+        self.response.write(template.render({
+            'user': user,
+            'player_name': player.get_name(),
+            'player_photo': player.get_photo(),
+            'url': url,
+            'games': games,
+            'decks': Game.DECK_CHOICES,
+            'now': datetime.datetime.now(),
+        }))
+
 class DeleteGame(PokerRequestHandler):
     def get(self, game_id):
         game = self.get_game(game_id, check_user = True)
@@ -141,11 +182,12 @@ class DeleteGame(PokerRequestHandler):
         return self.redirect('/')
 
 class GamePage(PokerRequestHandler):
+    
+    @decorator.oauth_required
     def get(self, game_id):
-        user = self.get_user(abort = False)
-        url = self.get_player().get_url(self.request.uri)
-        if not user:
-            return self.redirect(url)
+        user = self.get_user()
+        player = self.get_player()
+        url = player.get_url(self.request.uri)
         game = self.get_game(game_id)
         deck = json.dumps(game.get_deck())
         participant_key = str(game.key().id()) + str(user.user_id())
@@ -154,10 +196,16 @@ class GamePage(PokerRequestHandler):
             parent = game,
             user = user
         )
+        if not participant.name or not participant.photo:
+            participant.name = player.get_name()
+            participant.photo = player.get_photo()
+            participant.put()
         token = channel.create_channel(participant_key)
         template = JINJA_ENVIRONMENT.get_template('game.html')
         self.response.write(template.render({
             'user': user,
+            'player_name': player.get_name(),
+            'player_photo': player.get_photo(),
             'game': game,
             'deck': deck,
             'url': url,
@@ -178,6 +226,10 @@ class GameOpened(PokerRequestHandler):
         self.response.write(json.dumps(response))
 
 class ToggleCompleteGame(PokerRequestHandler):
+    def get(self, game_id, toggle):
+        self.post(game_id, toggle)
+        return self.redirect('/game/list')
+    
     def post(self, game_id, toggle):
         game = self.get_game(game_id, check_user = True)
         game.completed = toggle == 'complete'

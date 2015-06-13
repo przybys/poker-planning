@@ -56,3 +56,7 @@ target/
 .pydevproject
 
 .project
+
+*.prefs
+
+client_secrets.json

@@ -334,7 +334,7 @@
 	};
 	
 	Poker.prototype.waitingFor = function(round, $round) {
-		var template = '<ul class="list-inline small" data-game="waiting-for"><li><strong>Waiting for:</strong></li></ul>';
+		var template = '<ul class="list-inline" data-game="waiting-for"><li><strong>Waiting for:</strong></li></ul>';
 		var $waitingFor = $(template)
 			.appendTo($round);
 		var participant = null;
@@ -368,9 +368,9 @@
 				.appendTo($waitingFor);
 			
 			if(participant.user == this.me) {
-				$('<strong>You!</strong>').appendTo($item);
+				$('<strong></strong>').text('You!').appendTo($item);
 			} else {
-				$item.text(participant.name);
+				$('<small></small>').text(participant.name).appendTo($item);
 			}
 		}
 	};
@@ -379,7 +379,11 @@
 		var estimate = null;
 		var card = null;
 		var $estimate = null;
+		var participant = null;
+		var name = null;
+		var photo = null;
 		var $card = null;
+		var $sum = null;
 		
 		if(round.estimates.length == 0) {
 			$round.addClass('hidden');
@@ -389,23 +393,29 @@
 			card = this.game.deck[index];
 			
 			$estimate = $('<ul class="list-inline"></ul>')
+				.addClass('card-results')
 				.addClass('hidden')
 				.attr('data-card', card)
 				.appendTo($round);
 			
-			$card = $('<button type="button" class="btn btn-default btn-xs" disabled="disabled"></button>')
+			$card = $('<button type="button" class="btn btn-default" disabled="disabled"></button>')
 				.text(card);
 			
 			$('<li>')
 				.append($card)
 				.appendTo($estimate);
 			
-			$('<span>')
+			$sum = $('<span>')
 				.addClass('label')
 				.addClass('label-default')
 				.attr('data-toggle', 'tooltip')
 				.attr('title', 'Sum of card estimates')
-				.attr('data-card', 'sum-of-estimates')
+				.attr('data-card', 'sum-of-estimates');
+			
+			$('<li>')
+				.addClass('pull-right')
+				.addClass('sum-of-estimates')
+				.append($sum)
 				.appendTo($estimate);
 		}
 		
@@ -416,8 +426,27 @@
 				.find('[data-card="' + estimate.card + '"]')
 				.removeClass('hidden');
 			
+			participant = this.getParticipant(estimate.user);
+			
+			if(participant != null) {
+				photo = participant.photo;
+				name = participant.name;
+			} else {
+				photo = null;
+				name = estimate.name;
+			}
+			
+			var $photo = $('<img>')
+				.addClass('img-rounded')
+				.attr('src', photo)
+				.attr('alt', name)
+				.attr('width', 34)
+				.attr('height', 34)
+				.attr('data-toggle', 'tooltip')
+				.attr('title', name);
+			
 			$('<li></li>')
-				.text(estimate.name)
+				.append($photo)
 				.appendTo($estimate);
 			
 			$sum = $estimate
@@ -478,26 +507,39 @@
 				.attr('data-toggle', 'tooltip')
 				.attr('title', participant.observer ? 'Game observer' : 'Game player');
 			
+			var $photo = $('<img>')
+				.addClass('img-rounded')
+				.attr('src', participant.photo)
+				.attr('alt', participant.name)
+				.attr('width', 34)
+				.attr('height', 34);
+			
 			if(this.me == this.game.user) {
 				
-				var $toggle = $('<button type="button" class="btn btn-primary btn-xs dropdown-toggle" data-toggle="dropdown"></button>')
-					.append($icon)
-					.append(' ')
-					.append(participant.name)
-					.append(' ')
-					.append('<span class="caret"></span>');
+				var $options = $('<span class="glyphicon"></span>')
+					.addClass('glyphicon-option-horizontal');
+				
+				var $toggle = $('<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"></button>')
+					.append($options);
 				
 				var $menu = $('<ul class="dropdown-menu" role="menu"></ul>');
 				
 				this.toggleObserver(participant, $menu);
 				this.deleteParticipant(participant, $menu);
 				
-				var $dropdown = $('<div class="dropdown">')
+				var $dropdown = $('<div class="btn-group">')
+					.addClass('pull-right')
 					.append($toggle)
 					.append($menu);
 				
 				$('<li>')
 					.data('user', participant.user)
+					.append($photo)
+					.append(' ')
+					.append(participant.name)
+					.append(' ')
+					.append($icon)
+					.append(' ')
 					.append($dropdown)
 					.appendTo($participants);
 				
@@ -505,9 +547,11 @@
 				
 				$('<li>')
 					.data('user', participant.user)
-					.append($icon)
+					.append($photo)
 					.append(' ')
 					.append(participant.name)
+					.append(' ')
+					.append($icon)
 					.appendTo($participants);
 			}
 		}

@@ -113,6 +113,8 @@ class Game(db.Model):
 
 class Participant(db.Model):
     user = db.UserProperty(required = True)
+    name = db.StringProperty()
+    photo = db.StringProperty()
     created = db.DateTimeProperty(auto_now_add = True)
     observer = db.BooleanProperty(required = True, default = False)
     
@@ -121,10 +123,17 @@ class Participant(db.Model):
         participant_url = game_url + '/participant/' + self.key().name()
         return participant_url
     
+    def get_name(self):
+        if self.name:
+            return self.name
+        else:
+            return self.user.nickname()
+    
     def get_message(self):
         message = {
-            'user':  self.user.user_id(),
-            'name': self.user.nickname(),
+            'user': self.user.user_id(),
+            'name': self.get_name(),
+            'photo': self.photo,
             'observer': self.observer,
             'url': self.get_url()
         }

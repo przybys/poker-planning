@@ -4,10 +4,12 @@
 import webapp2
 
 from poker.handlers import *
+from poker.oauth2 import decorator
 
 application = webapp2.WSGIApplication([
     ('/', MainPage),
     ('/game', NewGame),
+    ('/game/list', GameList),
     ('/game/(\d+)', GamePage),
     ('/game/(\d+)/opened', GameOpened),
     ('/game/(\d+)/(complete|reopen)', ToggleCompleteGame),
@@ -20,4 +22,5 @@ application = webapp2.WSGIApplication([
     ('/game/(\d+)/story/(\d+)/round/(\d+)/estimate', EstimateRound),
     ('/game/(\d+)/participant/(\d+)/(player|observer)', ToggleGameObserver),
     ('/game/(\d+)/participant/(\d+)/delete', DeleteParticipant),
+    (decorator.callback_path, decorator.callback_handler())
 ], debug = True)

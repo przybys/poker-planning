@@ -34,3 +34,22 @@ body > .container {
 	top: 0px;
 	padding-top: 60px;
 }
+
+.list-participants li {
+	margin-bottom: 5px;
+}
+
+.card-results {
+	padding-top: 5px;
+	padding-bottom: 5px;
+	border-radius: 4px;
+}
+
+.card-results:hover {
+	background-color: #f9f9f9;
+}
+
+.sum-of-estimates {
+	line-height: 30px;
+	margin-right: 5px;
+}
