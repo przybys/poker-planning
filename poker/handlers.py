@@ -9,7 +9,6 @@ import jinja2
 
 from google.appengine.api import users
 from google.appengine.api import channel
-from oauth2client import client
 
 from poker.models import *
 from poker.oauth2 import decorator, service
@@ -65,7 +64,7 @@ class Player():
             try:
                 http = decorator.http()
                 self.profile = service.people().get(userId='me').execute(http=http)
-            except client.AccessTokenRefreshError:
+            except Exception:
                 pass
         return self.profile
     
