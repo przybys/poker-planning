@@ -181,7 +181,7 @@
 				.text(story.estimate == null ? '-' : (story.estimate < 0 ? 'Skipped' : story.estimate))
 			.end()
 			.find('.list-group-item-heading')
-				.text(story.name)
+				.html(story.name)
 			.end()
 			.appendTo($stories);
 		
