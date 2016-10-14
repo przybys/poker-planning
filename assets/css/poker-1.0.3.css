@@ -4,14 +4,15 @@ html {
 }
 
 body {
-	margin-bottom: 80px;
+	margin-bottom: 90px;
 }
 
 .footer {
 	position: absolute;
 	bottom: 0;
 	width: 100%;
-	height: 60px;
+	padding: 8px 0;
+	height: 80px;
 	background-color: #f8f8f8;
 	border-top: 1px solid #e7e7e7;
 }
