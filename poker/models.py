@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import datetime
 
 from jinja2.utils import urlize
 
@@ -84,12 +85,14 @@ class Game(db.Model):
         }
         return message
     
-    def send_update(self):
+    def send_update(self, force = True, user = None):
         message = self.get_message()
         message = json.dumps(message)
         participants = self.get_participants()
         for participant in participants:
-            channel.send_message(participant.key().name(), message)
+            if user and participant.user == user:
+                force = True
+            participant.send_update(message, force)
     
     def get_user_estimates(self, user):
         estimates = {}
@@ -117,6 +120,7 @@ class Participant(db.Model):
     photo = db.StringProperty()
     created = db.DateTimeProperty(auto_now_add = True)
     observer = db.BooleanProperty(required = True, default = False)
+    last_update = db.DateTimeProperty(auto_now_add = True)
     
     def get_url(self):
         game_url = self.parent().get_url()
@@ -138,6 +142,15 @@ class Participant(db.Model):
             'url': self.get_url()
         }
         return message
+    
+    def send_update(self, message, force):
+        if force or self.need_update():
+            self.last_update = datetime.datetime.now()
+            self.put()
+            channel.send_message(self.key().name(), message)
+    
+    def need_update(self):
+        return datetime.datetime.now() - self.last_update > datetime.timedelta(seconds = 1)
 
 class Story(db.Model):
     SKIPPED = -1

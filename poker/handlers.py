@@ -354,7 +354,7 @@ class EstimateRound(PokerRequestHandler):
         if count_participants == count_estimates:
             round.completed = True
             round.put()
-        game.send_update()
+        game.send_update(force = round.completed, user = user)
 
 class ToggleGameObserver(PokerRequestHandler):
     def post(self, game_id, participant_key, observer):
