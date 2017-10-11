@@ -6,12 +6,13 @@ import datetime
 import json
 import webapp2
 import jinja2
+import urllib
 
 from google.appengine.api import users
-from google.appengine.api import channel
 
 from poker.models import *
 from poker.oauth2 import decorator, service
+from poker.firebase import create_custom_token, send_firebase_message
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader = jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), '../templates')),
@@ -37,6 +38,7 @@ __all__ = [
     'EstimateRound',
     'ToggleGameObserver',
     'DeleteParticipant',
+    'GameClosed',
 ]
 
 class Player():
@@ -199,8 +201,11 @@ class GamePage(PokerRequestHandler):
             participant.name = player.get_name()
             participant.photo = player.get_photo()
             participant.put()
-        token = channel.create_channel(participant_key)
         template = JINJA_ENVIRONMENT.get_template('game.html')
+        channel_id = participant_key
+        client_auth_token = create_custom_token(channel_id)
+        message = game.get_message()
+        initial_message = urllib.unquote(json.dumps(message))
         self.response.write(template.render({
             'user': user,
             'player_name': player.get_name(),
@@ -210,7 +215,9 @@ class GamePage(PokerRequestHandler):
             'url': url,
             'now': datetime.datetime.now(),
             'request_url': self.request.url,
-            'token': token,
+            'token': client_auth_token,
+            'channel_id': channel_id,
+            'initial_message': initial_message,
         }))
 
 class GameOpened(PokerRequestHandler):
@@ -372,3 +379,11 @@ class DeleteParticipant(PokerRequestHandler):
             self.abort(403)
         participant.delete()
         game.send_update()
+
+class GameClosed(PokerRequestHandler):
+    def post(self, game_id):
+        game = self.get_game(game_id)
+        user = self.get_user()
+        participant_key = str(game.key().id()) + str(user.user_id())
+        channel_id = participant_key
+        send_firebase_message(channel_id, None)

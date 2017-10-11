@@ -7,7 +7,8 @@ import datetime
 from jinja2.utils import urlize
 
 from google.appengine.ext import db
-from google.appengine.api import channel
+
+from poker.firebase import send_firebase_message
 
 __all__ = [
     'Game',
@@ -108,6 +109,9 @@ class Game(db.Model):
         return estimates
     
     def delete(self, **kwargs):
+        participants = self.get_participants()
+        for participant in participants:
+            participant.send_update(None, True)
         db.delete(Participant.all(keys_only = True).ancestor(self))
         stories = self.get_stories()
         for story in stories:
@@ -147,7 +151,7 @@ class Participant(db.Model):
         if force or self.need_update():
             self.last_update = datetime.datetime.now()
             self.put()
-            channel.send_message(self.key().name(), message)
+            send_firebase_message(self.key().name(), message)
     
     def need_update(self):
         return datetime.datetime.now() - self.last_update > datetime.timedelta(seconds = 1)
