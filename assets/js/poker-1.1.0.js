@@ -6,20 +6,25 @@
 		this.token = null;
 		this.myEstimates = {};
 		this.game = null;
+		this.channel = null;
+		this.channelId = null;
 		
 		this.init(element);
 	};
 	
-	Poker.VERSION = '1.0.2';
+	Poker.VERSION = '1.1.0';
 	
 	Poker.prototype.init = function(element) {
 		this.$game = $(element);
 		this.gameUrl = this.$game.data('url');
 		this.me = this.$game.data('me');
 		this.token = this.$game.data('token');
+		this.channelId = this.$game.data('channel-id');
+		this.game = this.$game.data('initial-message');
 		
 		this.setup();
 		
+		this.updateGame();
 		this.openChannel();
 	};
 	
@@ -29,6 +34,16 @@
 		this.tooltips();
 		this.clickLinks();
 		this.clickCards();
+		this.gameUnload();
+	};
+	
+	Poker.prototype.gameUnload = function() {
+		$(window).on('beforeunload', $.proxy(this.closeGame, this));
+	};
+	
+	Poker.prototype.closeGame = function() {
+		this.channel.off();
+		$.post(this.gameUrl + '/closed');
 	};
 	
 	Poker.prototype.selectUrl = function() {
@@ -100,19 +115,16 @@
 	};
 	
 	Poker.prototype.openChannel = function() {
-		var token = this.token;
-		var channel = new goog.appengine.Channel(token);
-		var handler = {
-			'onopen': $.proxy(this.onOpened, this),
-			'onmessage': $.proxy(this.onMessage, this),
-			'onerror': $.proxy(this.onError, this),
-			'onclose': function() {}
-		};
-		var socket = channel.open(handler);
+		firebase.auth().signInWithCustomToken(this.token)
+			.then($.proxy(this.onValue, this))
+			.catch($.proxy(this.onError, this));
+	};
+	
+	Poker.prototype.onValue = function() {
+		this.channel = firebase.database().ref('channels/' + this.channelId);
+		this.channel.on('value', $.proxy(this.onMessage, this));
 		
-		socket.onopen = $.proxy(this.onOpened, this);
-		socket.onmessage = $.proxy(this.onMessage, this);
-		socket.onerror = $.proxy(this.onError, this);
+		this.onOpened();
 	};
 	
 	Poker.prototype.onOpened = function() {
@@ -123,20 +135,23 @@
 		this.myEstimates = data.estimates;
 	};
 	
-	Poker.prototype.onMessage = function(message) {
-		this.game = $.parseJSON(message.data);
+	Poker.prototype.onMessage = function(data) {
+		this.game = data.val();
 		
 		this.updateGame();
 	};
 	
-	Poker.prototype.onError = function() {
-		window.location.href = this.gameUrl;
+	Poker.prototype.onError = function(error) {
+		console.log(error.code);
+		console.log(error.message);
 	};
 	
 	Poker.prototype.updateGame = function() {
-		this.updateStories();
-		this.gameActions();
-		this.updateParticipants();
+		if(this.game) {
+			this.updateStories();
+			this.gameActions();
+			this.updateParticipants();
+		}
 	};
 	
 	Poker.prototype.updateStories = function() {
@@ -147,7 +162,7 @@
 		$stories.empty();
 		this.clearSum();
 		
-		if(this.game.stories.length == 0) {
+		if(!this.game.stories || this.game.stories.length == 0) {
 			$('<p>')
 				.text(this.me != this.game.user
 					? 'No stories? Just wait. There will be a story to estimate!'
@@ -157,12 +172,6 @@
 		
 		for(var key in this.game.stories) {
 			this.updateStory(this.game.stories[key], $stories);
-		}
-		
-		if(!this.game.completed) {
-			$('html, body').animate({
-				scrollTop: $(document).height()
-			});
 		}
 	};
 	
@@ -183,14 +192,14 @@
 			.find('.list-group-item-heading')
 				.html(story.name)
 			.end()
-			.appendTo($stories);
+			.prependTo($stories);
 		
 		if(story.is_current) {
+			this.storyActions(story, $story);
+			
 			if(story.estimate == null) {
 				this.updateRounds(story.rounds, $story);
 			}
-			
-			this.storyActions(story, $story);
 		}
 		
 		this.addToSum(story);
@@ -224,7 +233,7 @@
 		$('<hr>')
 			.appendTo($story);
 		
-		var template = '<div data-game="story-actions" class="btn-group btn-group-sm dropup" role="group"></div>';
+		var template = '<div data-game="story-actions" class="btn-group btn-group-sm" role="group"></div>';
 		
 		var $actions = $(template)
 			.appendTo($story);
@@ -273,7 +282,7 @@
 	Poker.prototype.updateRound = function(round, $rounds) {
 		var $round = $('<li>')
 			.attr('data-round', round.id)
-			.appendTo($rounds);
+			.prependTo($rounds);
 		
 		$('<hr>')
 			.appendTo($round);
@@ -385,7 +394,7 @@
 		var $card = null;
 		var $sum = null;
 		
-		if(round.estimates.length == 0) {
+		if(!round.estimates || round.estimates.length == 0) {
 			$round.addClass('hidden');
 		}
 		
@@ -434,6 +443,10 @@
 			} else {
 				photo = null;
 				name = estimate.name;
+			}
+			
+			if(!photo) {
+				photo = '/assets/img/photo.jpg';
 			}
 			
 			var $photo = $('<img>')
@@ -506,6 +519,10 @@
 				.addClass(participant.observer ? 'glyphicon-eye-open' : 'glyphicon-user')
 				.attr('data-toggle', 'tooltip')
 				.attr('title', participant.observer ? 'Game observer' : 'Game player');
+			
+			if(!participant.photo) {
+				participant.photo = '/assets/img/photo.jpg';
+			}
 			
 			var $photo = $('<img>')
 				.addClass('img-rounded')

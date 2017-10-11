@@ -12,6 +12,7 @@ application = webapp2.WSGIApplication([
     ('/game/list', GameList),
     ('/game/(\d+)', GamePage),
     ('/game/(\d+)/opened', GameOpened),
+    ('/game/(\d+)/closed', GameClosed),
     ('/game/(\d+)/(complete|reopen)', ToggleCompleteGame),
     ('/game/(\d+)/delete', DeleteGame),
     ('/game/(\d+)/story', NewStory),

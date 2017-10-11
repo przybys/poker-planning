@@ -3,14 +3,20 @@
 {% block title %}{{ game.name }}{% endblock %}
 
 {% block content %}
-<div data-game="poker" data-url="{{ game.get_url() }}" data-me="{{ user.user_id() }}" data-token="{{ token }}">
+<div data-game="poker"
+	 data-url="{{ game.get_url() }}"
+	 data-me="{{ user.user_id() }}"
+	 data-token="{{ token }}"
+	 data-channel-id="{{ channel_id }}"
+	 data-initial-message="{{ initial_message }}"
+	>
 	<div class="page-header">
 		<h1>{{ game.name }} <span data-game="sum-of-estimates" class="label label-default" data-toggle="tooltip" data-placement="right" title="Sum of story estimates"></span></h1>
 	</div>
 	<div class="row">
 		<div class="col-md-8">
-			<div data-game="stories" class="list-group"></div>
-			<div class="row hidden" data-game="actions">
+			<div class="hidden" data-game="actions">
+				<div class="row">
 				<div class="col-md-8" data-game="story">
 					<form action="{{ game.get_url() }}/story" method="post" role="form">
 						<div class="input-group">
@@ -35,7 +41,10 @@
 						<span class="glyphicon glyphicon-repeat"></span> Reopen game
 					</a>
 				</div>
+				</div>
+				<hr>
 			</div>
+			<div data-game="stories" class="list-group"></div>
 		</div>
 		<div class="col-md-4">
 			<p><input data-game="url" type="email" class="form-control" value="{{ request_url }}"></p>
@@ -48,6 +57,18 @@
 {% endblock %}
 
 {% block scripts %}
-<script type="text/javascript" src="/_ah/channel/jsapi"></script>
-<script type="text/javascript" src="/assets/js/poker-1.0.4.js"></script>
+<script type="text/javascript" src="/assets/js/firebase-4.2.0.js"></script>
+<script>
+	// Initialize Firebase
+	var config = {
+		apiKey: "AIzaSyC9PeeCnQrKcCzLuxyh_PZx9A3c3LjIA5o",
+		authDomain: "poker-planning-a8ba9.firebaseapp.com",
+		databaseURL: "https://poker-planning-a8ba9.firebaseio.com",
+		projectId: "poker-planning",
+		storageBucket: "poker-planning.appspot.com",
+		messagingSenderId: "51884463025"
+	};
+	firebase.initializeApp(config);
+</script>
+<script type="text/javascript" src="/assets/js/poker-1.1.0.js"></script>
 {% endblock %}
