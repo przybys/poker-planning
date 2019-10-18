@@ -4,4 +4,4 @@ lib/
 .pydevproject
 .project
 client_secrets.json
-.venv/
+env/
