@@ -5,3 +5,4 @@ lib/
 .project
 client_secrets.json
 env/
+.vscode/
