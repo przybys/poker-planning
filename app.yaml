@@ -13,8 +13,12 @@ handlers:
   static_files: favicon.ico
   upload: favicon\.ico
 
-- url: .*
+- url: /
   script: poker.application
+
+- url: /.*
+  script: poker.application
+  login: required
 
 libraries:
 - name: webapp2

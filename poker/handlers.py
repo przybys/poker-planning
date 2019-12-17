@@ -11,7 +11,6 @@ import urllib
 from google.appengine.api import users
 
 from poker.models import *
-from poker.oauth2 import decorator, service
 from poker.firebase import create_custom_token, send_firebase_message
 
 JINJA_ENVIRONMENT = jinja2.Environment(
@@ -44,38 +43,32 @@ __all__ = [
 class Player():
     user = None
     profile = None
-    
+
     def __init__(self):
         user = users.get_current_user()
         if user:
             self.user = user
-    
+
     def get_user(self):
         return self.user
-    
+
     def get_url(self, dest_url):
         if self.user:
             return users.create_logout_url('/')
         return users.create_login_url(dest_url)
-    
+
     def get_games(self):
         return Game.all().filter("user =", self.user)
-    
+
     def get_profile(self):
-        if not self.profile:
-            try:
-                http = decorator.http()
-                self.profile = service.people().get(userId='me').execute(http=http)
-            except Exception:
-                pass
-        return self.profile
-    
+        return None
+
     def get_name(self):
         profile = self.get_profile()
         if profile and 'displayName' in profile:
             return profile['displayName']
         return None
-    
+
     def get_photo(self):
         profile = self.get_profile()
         if profile and 'image' in profile:
@@ -84,19 +77,19 @@ class Player():
 
 class PokerRequestHandler(webapp2.RequestHandler):
     player = None
-    
+
     def get_player(self):
         if self.player is None:
             player = Player()
         return player
-    
+
     def get_user(self, abort = True):
         user = self.get_player().get_user()
         if abort:
             if not user:
                 self.abort(401)
         return user
-    
+
     def get_game(self, game_id, check_user = False):
         game = Game.get_by_id(int(game_id))
         if not game:
@@ -106,21 +99,21 @@ class PokerRequestHandler(webapp2.RequestHandler):
             if game.user != user:
                 self.abort(403)
         return game
-    
+
     def get_story(self, game_id, story_id, check_user = False):
         game = self.get_game(game_id, check_user)
         story = Story.get_by_id(int(story_id), game)
         if not story:
             self.abort(404)
         return story
-    
+
     def get_round(self, game_id, story_id, round_id, check_user = False):
         story = self.get_story(game_id, story_id, check_user)
         round = Round.get_by_id(int(round_id), story)
         if not round:
             self.abort(404)
         return round
-    
+
     def get_participant(self, game_id, participant_key, check_user = False):
         game = self.get_game(game_id, check_user)
         participant = Participant.get_by_key_name(str(participant_key), game)
@@ -158,8 +151,7 @@ class NewGame(PokerRequestHandler):
         return self.redirect(game_url)
 
 class GameList(PokerRequestHandler):
-    
-    @decorator.oauth_required
+
     def get(self):
         player = self.get_player()
         user = player.get_user()
@@ -183,8 +175,7 @@ class DeleteGame(PokerRequestHandler):
         return self.redirect('/')
 
 class GamePage(PokerRequestHandler):
-    
-    @decorator.oauth_required
+
     def get(self, game_id):
         user = self.get_user()
         player = self.get_player()
@@ -235,7 +226,7 @@ class ToggleCompleteGame(PokerRequestHandler):
     def get(self, game_id, toggle):
         self.post(game_id, toggle)
         return self.redirect('/game/list')
-    
+
     def post(self, game_id, toggle):
         game = self.get_game(game_id, check_user = True)
         game.completed = toggle == 'complete'
